@@ -8,6 +8,13 @@ import (
 	"strings"
 )
 
+const (
+	// FDID is the SEG-2 File Descriptor ID - magic number at start of file
+	FDID = 0x3a55
+	// TDID is the Trace Descriptor ID - magic number at start of Trc Desc Block
+	TDID = 0x4422
+)
+
 // HDRS are the trongly suggested headers
 var HDRS = []string{
 	"RECEIVER_LOCATION",    // int
@@ -65,6 +72,9 @@ func ReadSEG2(fn string) []Trace {
 
 	// read file header block
 	binary.Read(f, binary.LittleEndian, fh)
+	if fh.FDID != FDID {
+		log.Fatal("not a seg-2 file. file desc id", fh.FDID)
+	}
 	//fmt.Printf("%+v\n", fh)
 
 	// read trace pointer block
@@ -78,6 +88,9 @@ func ReadSEG2(fn string) []Trace {
 		f.Seek(int64(ptr), os.SEEK_SET)
 		tbh := &TrcBlkHdr{}
 		binary.Read(f, binary.LittleEndian, tbh)
+		if tbh.TrcID != TDID {
+			log.Fatal("wrong trace desc header", tbh.TrcID)
+		}
 		//fmt.Println(tbh)
 		//trcStrLen := tbh.BlkSiz - 32
 		//trcStr := make([]byte, trcStrLen)

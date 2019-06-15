@@ -11,8 +11,9 @@ import (
 	"github.com/sanandak/seg/seg2"
 )
 
-const SEGY_TRACE_HDR_LEN = 240
+// header info borrowed from github.com/asbjorn/segygo
 
+// TraceHeader - segy/su 240 byte trace header
 type TraceHeader struct {
 	Tracl                                                                int32
 	Tracr                                                                int32
@@ -53,11 +54,13 @@ type TraceHeader struct {
 	Unass                                                                [14]int16 // unassigned short array
 }
 
+// Trace is a SEGY trace with Data and TraceHeader
 type Trace struct {
 	TraceHeader
 	Data []float32
 }
 
+// ReadSU reads from `fn` (string) and returns an array of segy []Trace
 func ReadSU(fn string) []Trace {
 	f, err := os.Open(fn)
 	if err != nil {
@@ -87,7 +90,7 @@ func ReadSU(fn string) []Trace {
 	return trcs
 }
 
-// WriteSU - to fn (string) write trcs ([]Trace)
+// WriteSU - write to ``fn` (string) write `trcs` (array of segy []Trace)
 func WriteSU(fn string, trcs []Trace) int {
 	f, err := os.OpenFile(fn, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 	if err != nil {
@@ -112,9 +115,10 @@ func WriteSU(fn string, trcs []Trace) int {
 	return nwritten
 }
 
-// SEG2SEGY returns a byte slice representing a SEG-Y trace
-// including 240 byte header and trace data
-func SEG2SEGY(seg2trc seg2.SEG2Trace) []byte {
+// Seg2Segy takes an individual seg2 `Trace` and returns
+// a byte slice representing a SEG-Y trace including 240 byte
+// header and trace data (big endian)
+func Seg2Segy(seg2trc seg2.Trace) []byte {
 	trc := &Trace{}
 	hdr := &trc.TraceHeader
 	hdr.Ns = uint16(len(seg2trc.Data))

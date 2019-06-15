@@ -8,6 +8,7 @@ import (
 	"strings"
 )
 
+// HDRS are the trongly suggested headers
 var HDRS = []string{
 	"RECEIVER_LOCATION",    // int
 	"SAMPLE_INTERVAL",      // float
@@ -16,12 +17,17 @@ var HDRS = []string{
 	"DELAY",                // float
 }
 
-type Seg2TrcHdr map[string][]string
+// TrcHdr is a map of the strings in the header as key and an array of
+// strings in the value
+type TrcHdr map[string][]string
 
-type SEG2Trace struct {
+// Trace consists of the data and header (a map/dict)
+type Trace struct {
 	Data []float32
-	Hdr  Seg2TrcHdr
+	Hdr  TrcHdr
 }
+
+// FileHeader is the contents of the SEG2 File Header
 type FileHeader struct {
 	FDID        uint16
 	RevNum      uint16
@@ -37,7 +43,7 @@ type FileHeader struct {
 	//Strings     []byte
 }
 
-// TrcBlkHdr is th
+// TrcBlkHdr is the contents of the Trace Block Header
 type TrcBlkHdr struct {
 	TrcID      uint16
 	BlkSiz     uint16
@@ -48,7 +54,7 @@ type TrcBlkHdr struct {
 }
 
 // ReadSEG2 reads a SEG2 formatted file and returns an array of `SEG2Trace`
-func ReadSEG2(fn string) []SEG2Trace {
+func ReadSEG2(fn string) []Trace {
 	// seg2 file header
 	fh := &FileHeader{}
 	f, err := os.Open(fn)
@@ -66,7 +72,7 @@ func ReadSEG2(fn string) []SEG2Trace {
 	binary.Read(f, binary.LittleEndian, &trcptrs)
 
 	// read trace header block and data block
-	var seg2trcs = make([]SEG2Trace, fh.NumTrcs)
+	var seg2trcs = make([]Trace, fh.NumTrcs)
 	for i, ptr := range trcptrs {
 		//fmt.Println("trace", i)
 		f.Seek(int64(ptr), os.SEEK_SET)
@@ -75,7 +81,7 @@ func ReadSEG2(fn string) []SEG2Trace {
 		//fmt.Println(tbh)
 		//trcStrLen := tbh.BlkSiz - 32
 		//trcStr := make([]byte, trcStrLen)
-		var hdr = make(Seg2TrcHdr)
+		var hdr = make(TrcHdr)
 		var strOffset uint16
 		for {
 			binary.Read(f, binary.LittleEndian, &strOffset)
@@ -100,7 +106,7 @@ func ReadSEG2(fn string) []SEG2Trace {
 		var data = make([]float32, tbh.NSamps)
 		binary.Read(f, binary.LittleEndian, &data)
 		//fmt.Println(hdr, data[:10])
-		seg2trcs[i] = SEG2Trace{Data: data, Hdr: hdr}
+		seg2trcs[i] = Trace{Data: data, Hdr: hdr}
 	}
 	return seg2trcs
 }
